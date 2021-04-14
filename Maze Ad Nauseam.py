@@ -156,16 +156,17 @@ def collision(Xc, Yc, VelX, VelY):
     Yg=math.floor(Yc/(P))
     if BoxList[Xg][Yg] == 1:
         
-        Dist=["","","",""] #down, up, right, left
+        Dist=["","","",""] #down, right, up, left
         Dist[0]= ((Yg+1)*P)-Yc
-        Dist[1]= Yc-(Yg*P)
-        Dist[2]= ((Xg+1)*P)-Xc
+        Dist[1]= ((Xg+1)*P)-Xc
+        Dist[2]= Yc-(Yg*P)
         Dist[3]= Xc-(Xg*P)
         Dist2=Dist[:]
         Dist2.sort()
-        
-        XFault = ((math.ceil(Xc/(P)))-(Xc/(P)))*P
-        YFault = ((math.ceil(Yc/(P)))-(Yc/(P)))*P
+        for Distance in Dist:
+            if Distance == Dist2[0]:
+                pass
+            
     if Xc > 480 or Xc < 0:
         pass
     if Yc > 476 or Yc < 0:
