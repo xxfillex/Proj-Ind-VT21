@@ -37,25 +37,31 @@ def startgame(Difficulty):
     clearwidgets()
     
     GameOptions = Canvas(root, bg = "gray", height = 100, width = 500)
-    GameOptions.pack(side=TOP)    
+    GameOptions.pack(side=TOP)  
+    B1 = Button(GameOptions, command=menuscreen, text ="Quit")
+    B1.place(x=50, y=44)
+    Timer = Label(GameOptions, font=("Courier", 30, 'bold'), bg="dark green", fg="white", bd =30)
+    Timer.place(x=100, y=0)    
     GameCanvas = Canvas(root, bg = "gray", height = 500, width = 500)
     GameCanvas.pack(side=TOP)
     Sprite = Canvas(GameCanvas, bg = "green", height = 16, width = 16)
     Sprite.place(x=246, y=480)
     
-    WidgetList.extend([GameCanvas, GameOptions]) #extends the list with the added widgets so that they can be removed
+    WidgetList.extend([GameCanvas, GameOptions, Sprite, B1, Timer]) #extends the list with the added widgets so that they can be removed
     boxlistsetup(Difficulty)
     boxlistgenerate()
     boxlistprint(GameCanvas)
     root.bind("<KeyPress>", keydown)
     root.bind("<KeyRelease>", keyup)    
     
+    gametimer(-1, 0, 0, Timer)
     Sprite.after(33, lambda : physics(4/Difficulty, Sprite, GameCanvas, 0, 0))
 
 def boxlistsetup(Difficulty):
     #fills the boxlist with a number of lists equal to "Difficulty", then fills each of those lists with the same number of lists.
     #in effect, these lists can be used as a grid of X and Y coordinates, where the X coordinate is the placement of the parent lists
     #and the Y coordinate is the placement of the lists nested inside of the parent list
+    BoxList.clear()
     for Xc in range(0, Difficulty):
         BoxList.append([])
         for Yc in range(0, Difficulty):
@@ -255,6 +261,24 @@ def placebox(GameCanvas, Xg, Yg, G):
     Box = GameCanvas.create_polygon(C, fill="black") #creates a box at those coordinates
 
 
+def gametimer(S, M, H, Timer):
+    #every second it increments seconds and if 60 seconds has passed, a minute, and if 60 minutes has passed, an hour
+    S+=1
+    if S >= 60:
+        S-=60
+        M+=1
+    if M >= 60:
+        M-=60
+        H+=1
+    St=S
+    Mt=M
+    if S < 10:
+        St="0"+str(S) #adds a 0 to the seconds so that it's always 2 digits long if the seconds are single digits
+    if M < 10:
+        Mt="0"+str(M) #adds a 0 to the minutes
+    T=H,":",Mt,":",St #creates the text to display on the timer
+    Timer.config(text=T) #changes the timer's text to the updated text
+    Timer.after(1000, lambda : gametimer(S, M, H, Timer)) #runs the function after 1s
 #setup
 #creates the tkinter window and details for it, as well as global lists that are needed later
 root = Tk()
