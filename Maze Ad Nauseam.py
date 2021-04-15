@@ -69,6 +69,22 @@ def boxlistgenerate():
     BoxList[3][3]=1
     BoxList[3][4]=1
     BoxList[9][9]=1
+    BoxList[2][7]=1
+    BoxList[2][8]=1
+    BoxList[2][6]=1
+    BoxList[3][7]=1
+    BoxList[1][7]=1
+    BoxList[7][1]=1
+    BoxList[7][2]=1
+    BoxList[7][3]=1
+    BoxList[8][1]=1
+    BoxList[8][2]=1
+    BoxList[8][3]=1
+    BoxList[6][1]=1
+    BoxList[6][2]=1
+    BoxList[6][3]=1    
+    
+    
 
 def boxlistprint(GameCanvas):
     #takes the length of the boxlist to figure out how many X and Y coordinates there are
@@ -124,8 +140,10 @@ def keyup(event):
 
 
 def physics(Speed, Sprite, GameCanvas, VelX, VelY):
-    Xc = Sprite.winfo_rootx() - GameCanvas.winfo_rootx()
-    Yc = Sprite.winfo_rooty() - GameCanvas.winfo_rooty()
+    #finds the X and Y coordinate of the sprite
+    Xc = Sprite.winfo_rootx() - GameCanvas.winfo_rootx() + 10 
+    Yc = Sprite.winfo_rooty() - GameCanvas.winfo_rooty() + 10
+    #adds the speed variable to the velocity of the sprite according to which arrow key is pressed
     if ArrowKeys[0] == 1:
         VelX-=Speed
     if ArrowKeys[1] == 1:
@@ -134,44 +152,100 @@ def physics(Speed, Sprite, GameCanvas, VelX, VelY):
         VelY-=Speed
     if ArrowKeys[3] == 1:
         VelY+=Speed
-    NXc=Xc+VelX
-    NYc=Yc+VelY
+    #runs physics in 4 steps to prevent clipping
+    for L in range(0,4):
+        #adds a quarter of the velocity to the coordinate
+        Xc+=(VelX/4) 
+        Yc+=(VelY/4)    
+        Correction=collision(Xc, Yc, VelX, VelY) #returns correction values for coordinates and speed as a list
+        #corrects the X and Y coordinate if collision happens, and sets velocities to 0
+        Xc+=Correction[0]
+        Yc+=Correction[1]
+        VelX=Correction[2]
+        VelY=Correction[3]
+    #decreases the speed by 5% per cycle
+    VelX=VelX*0.95
+    VelY=VelY*0.95    
     
-    Correction=collision(NXc, NYc, VelX, VelY)
-    NXc+=Correction[0]
-    NYc+=Correction[1]
-    VelX=Correction[2]
-    VelY=Correction[3]
-    Correction.clear()
-    
-    Sprite.place(x=NXc, y=NYc)    
-    Sprite.after(33, lambda : physics(Speed, Sprite, GameCanvas, VelX, VelY))
+    #places the sprite in the updated coordinates
+    Sprite.place(x=Xc-10, y=Yc-10)    
+    Sprite.after(33, lambda : physics(Speed, Sprite, GameCanvas, VelX, VelY)) #reruns physics after 33ms
 
 def collision(Xc, Yc, VelX, VelY):
     XFault=0
     YFault=0
+    #finds how large the grid is and then how many pixels wide each grid is
     G=len(BoxList)
     P=500/G
+    
+    #adjusts coordinates to inbounds if they are out of bounds, and sets velocities to 0
+    if Xc > 488:
+        XFault-=Xc-488
+        Xc=488
+        VelX=0
+    if Xc < 12:
+        XFault-=Xc-12
+        Xc=12
+        VelX=0
+    if Yc > 486:
+        YFault-=Yc-486
+        Yc=486
+        VelY=0
+    if Yc < 12:
+        YFault-=Yc-12
+        Yc=12
+        VelY=0
+    
+    #finds the grid coordinate by dividing the coordinate by how large the grids are in pixels
     Xg=math.floor(Xc/(P))
     Yg=math.floor(Yc/(P))
-    if BoxList[Xg][Yg] == 1:
+    if BoxList[Xg][Yg] == 1: #if the grid coordinate contains a box
         
-        Dist=["","","",""] #down, right, up, left
+        Dist=["","","",""] #distance to the next grid down, right, up, and left
         Dist[0]= ((Yg+1)*P)-Yc
         Dist[1]= ((Xg+1)*P)-Xc
         Dist[2]= Yc-(Yg*P)
         Dist[3]= Xc-(Xg*P)
-        Dist2=Dist[:]
-        Dist2.sort()
-        for Distance in Dist:
-            if Distance == Dist2[0]:
-                pass
-            
-    if Xc > 480 or Xc < 0:
-        pass
-    if Yc > 476 or Yc < 0:
-        pass    
-    return [XFault, YFault, VelX, VelY]
+        #copies it and sorts it to find the shortest distance to run code according to which one is the shortest
+        DistCopy=Dist[:]
+        DistCopy.sort()
+        if Dist[0] == DistCopy[0]:          #if down is the shortest distance    
+            if BoxList[Xg][Yg+1] == 1:      #if the grid down contains a box
+                if Dist[3] < Dist[1]:       #push the sprite either right or left according to which distance is smallest
+                    XFault-=Dist[3]         #push left according to distance
+                else:
+                    XFault+=Dist[1]         #push right according to distance
+                VelX=0                      #set X velocity to 0 as a corner has been hit
+            YFault+=Dist[0]                 #push sprite down according to distance
+            VelY=0                          #set Y velocity to 0 as a horizontal wall has been hit
+        elif Dist[1] == DistCopy[0]:
+            if BoxList[Xg+1][Yg] == 1:        
+                if Dist[0] < Dist[2]:
+                    YFault+=Dist[0]
+                else:
+                    YFault-=Dist[2]
+                VelY=0
+            XFault+=Dist[1]
+            VelX=0
+        elif Dist[2] == DistCopy[0]:
+            if BoxList[Xg][Yg-1] == 1:        
+                if Dist[1] < Dist[3]:
+                    XFault+=Dist[1]
+                else:
+                    XFault-=Dist[3]
+                VelX=0
+            YFault-=Dist[2]
+            VelY=0
+        elif Dist[3] == DistCopy[0]:
+            if BoxList[Xg-1][Yg] == 1:
+                if Dist[2] < Dist[0]:
+                    XFault-=Dist[2]
+                else:
+                    XFault+=Dist[0]
+                VelY=0
+            XFault-=Dist[3]
+            VelX=0
+    return [XFault, YFault, VelX, VelY] #returns how far the sprite has been pushed X and Y as well as updated velocities
 
 def placebox(GameCanvas, Xg, Yg, G):
     Size=500/G #establishes how large each box in the grid is in pixels
@@ -179,7 +253,6 @@ def placebox(GameCanvas, Xg, Yg, G):
     Yc=Yg*Size #same as for Y coordinate in pixels
     C=Xc, Yc, Xc+Size, Yc, Xc+Size, Yc+Size, Xc, Yc+Size #makes a variable with the coordinates in pixels
     Box = GameCanvas.create_polygon(C, fill="black") #creates a box at those coordinates
-
 
 
 #setup
