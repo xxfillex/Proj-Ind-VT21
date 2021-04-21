@@ -11,8 +11,10 @@ def displayhelp():
     #clears all widgets and displays a text
     clearwidgets()
     
-    T = Text(root, height=5)
-    T.insert(INSERT, "This is a help screen")
+    T = Text(root, height=5, wrap=WORD)
+    T.insert(INSERT, "Welcome to Maze Ad Nauseam, the goal is to complete the maze as fast as possible. ")
+    T.insert(INSERT, "You can navigate the mazes using the 4 arrow keys, but you cannot move through black areas. ")
+    T.insert(INSERT, "You complete a maze by reaching a light green box. ")
     T.pack(padx=5, pady=5)
     B1 = Button(root, command=menuscreen, text ="Back")
     B1.pack(padx=230, side=LEFT)
@@ -54,7 +56,15 @@ def startgame(Difficulty):
     root.bind("<KeyPress>", keydown)
     root.bind("<KeyRelease>", keyup)    
     
-    gametimer(-1, 0, 0, Timer)
+    global RunTimer
+    global Sec
+    global Min
+    global Hour
+    Sec = -1
+    Min = 0
+    Hour = 0    
+    RunTimer=True    
+    gametimer(Timer)
     Sprite.after(33, lambda : physics(4/Difficulty, Sprite, GameCanvas, 0, 0))
 
 def boxlistsetup(Difficulty):
@@ -69,27 +79,13 @@ def boxlistsetup(Difficulty):
             
     
 def boxlistgenerate():
-    #sets [X][Y] coordinates to 1, meaning a box is there
-    BoxList[0][0]=1
-    BoxList[2][2]=1
-    BoxList[3][3]=1
-    BoxList[3][4]=1
-    BoxList[9][9]=1
-    BoxList[2][7]=1
-    BoxList[2][8]=1
-    BoxList[2][6]=1
-    BoxList[3][7]=1
-    BoxList[1][7]=1
-    BoxList[7][1]=1
-    BoxList[7][2]=1
-    BoxList[7][3]=1
-    BoxList[8][1]=1
-    BoxList[8][2]=1
-    BoxList[8][3]=1
-    BoxList[6][1]=1
-    BoxList[6][2]=1
-    BoxList[6][3]=1    
     
+    BoxListGen=[[1, 2], [4, 4], [9, 9]]
+    for E in BoxListGen:
+        #sets [X][Y] coordinates to 1, meaning a box is there
+        #E is a list in BoxListGen, containing the coordinates
+        BoxList[E[0]][E[1]]=1 
+    BoxList[4][5]=2 #sets a box to 2, meaning it is a light green box causing you to win
     
 
 def boxlistprint(GameCanvas):
@@ -99,7 +95,16 @@ def boxlistprint(GameCanvas):
     for Xc in range(0, G):
         for Yc in range(0, G):
             if BoxList[Xc][Yc] == 1:
-                placebox(GameCanvas, Xc, Yc, G)
+                placebox(GameCanvas, Xc, Yc, G, "black")
+            elif BoxList[Xc][Yc] == 2:
+                placebox(GameCanvas, Xc, Yc, G, "light green")
+
+def placebox(GameCanvas, Xg, Yg, G, F):
+    Size=500/G #establishes how large each box in the grid is in pixels
+    Xc=Xg*Size #multiplies its position in the grid with how large each box is to figure out its X coordinate in pixels
+    Yc=Yg*Size #same as for Y coordinate in pixels
+    C=Xc, Yc, Xc+Size, Yc, Xc+Size, Yc+Size, Xc, Yc+Size #makes a variable with the coordinates in pixels
+    Box = GameCanvas.create_polygon(C, fill=F) #creates a box at those coordinates
 
 def clearwidgets():
     #clears all widgets that are in the widgetlist
@@ -110,6 +115,11 @@ def clearwidgets():
 def menuscreen():
     #clears widgets and then creates menu widgets
     clearwidgets()
+    
+    global RunTimer
+    global GameWon
+    RunTimer=False
+    GameWon=False
     
     T = Text(root, height=5)
     T.insert(INSERT, "                        Maze Ad Nauseam")
@@ -169,17 +179,21 @@ def physics(Speed, Sprite, GameCanvas, VelX, VelY):
         Yc+=Correction[1]
         VelX=Correction[2]
         VelY=Correction[3]
+        Win=Correction[4]
     #decreases the speed by 5% per cycle
     VelX=VelX*0.95
     VelY=VelY*0.95    
     
     #places the sprite in the updated coordinates
     Sprite.place(x=Xc-10, y=Yc-10)    
+    if Win == 1:
+        gamewin(GameCanvas)
     Sprite.after(33, lambda : physics(Speed, Sprite, GameCanvas, VelX, VelY)) #reruns physics after 33ms
 
 def collision(Xc, Yc, VelX, VelY):
     XFault=0
     YFault=0
+    Win=0
     #finds how large the grid is and then how many pixels wide each grid is
     G=len(BoxList)
     P=500/G
@@ -251,34 +265,47 @@ def collision(Xc, Yc, VelX, VelY):
                 VelY=0
             XFault-=Dist[3]
             VelX=0
-    return [XFault, YFault, VelX, VelY] #returns how far the sprite has been pushed X and Y as well as updated velocities
+    if BoxList[Xg][Yg] == 2: #a box with the value 2 is the light green box causing you to win
+        Win=1
+    return [XFault, YFault, VelX, VelY, Win] #returns how far the sprite has been pushed X and Y as well as updated velocities
 
-def placebox(GameCanvas, Xg, Yg, G):
-    Size=500/G #establishes how large each box in the grid is in pixels
-    Xc=Xg*Size #multiplies its position in the grid with how large each box is to figure out its X coordinate in pixels
-    Yc=Yg*Size #same as for Y coordinate in pixels
-    C=Xc, Yc, Xc+Size, Yc, Xc+Size, Yc+Size, Xc, Yc+Size #makes a variable with the coordinates in pixels
-    Box = GameCanvas.create_polygon(C, fill="black") #creates a box at those coordinates
-
-
-def gametimer(S, M, H, Timer):
+def gametimer(Timer):
     #every second it increments seconds and if 60 seconds has passed, a minute, and if 60 minutes has passed, an hour
-    S+=1
-    if S >= 60:
-        S-=60
-        M+=1
-    if M >= 60:
-        M-=60
-        H+=1
-    St=S
-    Mt=M
-    if S < 10:
-        St="0"+str(S) #adds a 0 to the seconds so that it's always 2 digits long if the seconds are single digits
-    if M < 10:
-        Mt="0"+str(M) #adds a 0 to the minutes
-    T=H,":",Mt,":",St #creates the text to display on the timer
+    global Sec
+    global Min
+    global Hour    
+    global RunTimer
+    Sec+=1
+    if Sec >= 60:
+        Sec-=60
+        Min+=1
+    if Min >= 60:
+        Min-=60
+        Hour+=1
+    St=Sec
+    Mt=Min
+    if Sec < 10:
+        St="0"+str(Sec) #adds a 0 to the seconds so that it's always 2 digits long if the seconds are single digits
+    if Min < 10:
+        Mt="0"+str(Min) #adds a 0 to the minutes
+    T=Hour,":",Mt,":",St #creates the text to display on the timer
     Timer.config(text=T) #changes the timer's text to the updated text
-    Timer.after(1000, lambda : gametimer(S, M, H, Timer)) #runs the function after 1s
+    if RunTimer==True: #makes sure that the timer isn't run several times at once if you return to menu screen
+        Timer.after(1000, lambda : gametimer(Timer)) #runs the function after 1s
+def gamewin(GameCanvas):
+    global Sec
+    global Min
+    global Hour
+    global GameWon
+    # returns if GameWon is true so that the rest of the function is only run once
+    if GameWon == True:
+        return
+    GameWon=True
+    Tw = '''You win
+    it took you {} hours, {} minutes, {} seconds.'''.format(Hour, Min, Sec)
+    WinPopup = Label(GameCanvas, font=("Courier", 10, 'bold'), bg="blue", fg="white", bd =30, text=Tw)
+    WinPopup.place(x=35, y=200)    
+    WidgetList.extend([WinPopup]) #extends the list with the added widget so that they can be removed
 #setup
 #creates the tkinter window and details for it, as well as global lists that are needed later
 root = Tk()
@@ -291,5 +318,3 @@ ArrowKeys=[0, 0, 0, 0]
 menuscreen() #creates the menu screen in the tkinter window
 
 root.mainloop() #makes the tkinter window show up and runs a code loop in the background
-
-
