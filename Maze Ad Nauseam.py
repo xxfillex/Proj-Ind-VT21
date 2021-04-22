@@ -1,13 +1,12 @@
 from tkinter import *
 import math
 
-class Window(Frame):
-    #I have no idea what this does but google said I needed it
+class Window(Frame):                                #tkiner needs this to create a window
     def __init__(self, master=None):
         Frame.__init__(self, master)
         self.master = master
         
-def createlists():
+def createlists():                                  #creates global lists
     #creates global lists which will be used for various purposes
     global WidgetList
     global BoxList
@@ -15,7 +14,7 @@ def createlists():
     WidgetList=[]
     BoxList=[]
     ArrowKeys=[0, 0, 0, 0]  
-def menuscreen():
+def menuscreen():                                   #displays menu screen options and ends game processes if they are active
     #clears widgets
     clearwidgets()
     
@@ -41,9 +40,8 @@ def menuscreen():
     #extends the list with the added widgets so that they can be removed
     WidgetList.extend([T, B1, B2]) 
 
-def displayhelp():
+def displayhelp():                                  #displays text containing instructions on how to play the game
     #clears all widgets and displays a text, as well as creating a button leading back to the menuscreen
-    
     clearwidgets()
     
     T = Text(root, height=8, wrap=WORD)
@@ -61,7 +59,7 @@ def displayhelp():
     #extends the list with the added widgets so that they can be removed
     WidgetList.extend([T, B1]) 
 
-def choosedifficulty():
+def choosedifficulty():                             #displays three buttons for choosing difficulty
     #clears all widgets
     clearwidgets()
     
@@ -77,7 +75,7 @@ def choosedifficulty():
     #extends the list with the added widgets so that they can be removed
     WidgetList.extend([B1, B2, B3]) 
 
-def startgame(Difficulty):
+def startgame(Difficulty):                          #creates game related widgets and starts game related processes
     #clears widgets and then creates widgets for game elements
     clearwidgets()
     
@@ -96,7 +94,7 @@ def startgame(Difficulty):
     Sprite.place(x=246, y=480)
     
     #extends the list with the added widgets so that they can be removed
-    WidgetList.extend([GameCanvas, GameOptions, Sprite, B1, Timer]) 
+    WidgetList.extend([GameCanvas, GameOptions, Sprite, B1, Timer])     
     
     #setup creates a list containing lists containing 0s to make possible for a coordinate system according to Difficulty
     #generate fills the created list with coordinates for a maze according to Difficulty
@@ -125,7 +123,7 @@ def startgame(Difficulty):
     #starts the physics engine
     Sprite.after(33, lambda : physics(4/Difficulty, Sprite, GameCanvas, 0, 0))
 
-def boxlistsetup(Difficulty):
+def boxlistsetup(Difficulty):                       #creates a list containing lists containing 0s to make possible for a coordinate system according to Difficulty
     #fills the boxlist with a number of lists equal to "Difficulty", then fills each of those lists with the same number of lists.
     #in effect, these lists can be used as a grid of X and Y coordinates, where the X coordinate is the placement of the parent lists
     #and the Y coordinate is the placement of the lists nested inside of the parent list
@@ -136,7 +134,7 @@ def boxlistsetup(Difficulty):
             BoxList[Xc].append(0)
             
     
-def boxlistgenerate(Difficulty):
+def boxlistgenerate(Difficulty):                    #fills the boxlist with coordinates for a maze according to Difficulty
     if Difficulty == 10:
         BoxListGen=[
             [1, 2, 4, 6],
@@ -201,7 +199,7 @@ def boxlistgenerate(Difficulty):
     
     
 
-def boxlistprint(GameCanvas):
+def boxlistprint(GameCanvas):                       #draws the maze in boxlist on the GameCanvas
     #takes the length of the boxlist to figure out how many X and Y coordinates there are
     #then it places a box image on the GameCanvas widget at the coordinates X and Y according to how many X and Y coordinates there are for every element in the boxlist
     G=len(BoxList)
@@ -212,20 +210,19 @@ def boxlistprint(GameCanvas):
             elif BoxList[Xc][Yc] == 2:
                 placebox(GameCanvas, Xc, Yc, G, "light green")
 
-def placebox(GameCanvas, Xg, Yg, G, F):
+def placebox(GameCanvas, Xg, Yg, G, F):             #draws a singular box on the GameCanvas according to its grid X and Y coordinate, color F
     Size=500/G #establishes how large each box in the grid is in pixels
     Xc=Xg*Size #multiplies its position in the grid with how large each box is to figure out its X coordinate in pixels
     Yc=Yg*Size #same as for Y coordinate in pixels
     C=Xc, Yc, Xc+Size, Yc, Xc+Size, Yc+Size, Xc, Yc+Size #makes a variable with the coordinates in pixels
     Box = GameCanvas.create_polygon(C, fill=F) #creates a box at those coordinates
 
-def clearwidgets():
-    #clears all widgets that are in the widgetlist
+def clearwidgets():                                 #clears all widgets that are in the widgetlist
     for Widget in WidgetList:
         Widget.pack_forget()
     WidgetList.clear()
   
-def keydown(event):
+def keydown(event):                                 #tracks if arrow keys are pressed
     #updates the list of keys pressed whenever a button is pressed to know which arrow keys are currently pressed
     if event.keysym == 'Left':
         ArrowKeys[0]=1
@@ -236,7 +233,7 @@ def keydown(event):
     elif event.keysym == 'Down':
         ArrowKeys[3]=1
         
-def keyup(event):
+def keyup(event):                                   #tracks if arrow keys are released
     #sets the arrow keys in the list to 0 whenever a key is released to not have the arrow keys stuck as pressed
     if event.keysym == 'Left':
         ArrowKeys[0]=0
@@ -248,7 +245,7 @@ def keyup(event):
         ArrowKeys[3]=0
 
 
-def physics(Speed, Sprite, GameCanvas, VelX, VelY):
+def physics(Speed, Sprite, GameCanvas, VelX, VelY): #updates the position/velocity of the sprite once per 33ms
     global RunPhysics
     
     #finds the X and Y coordinate of the sprite
@@ -290,7 +287,7 @@ def physics(Speed, Sprite, GameCanvas, VelX, VelY):
     elif RunPhysics == True:
         Sprite.after(33, lambda : physics(Speed, Sprite, GameCanvas, VelX, VelY)) #reruns physics after 33ms
 
-def collision(Xc, Yc, VelX, VelY):
+def collision(Xc, Yc, VelX, VelY):                  #if the sprite collides with something it returns adjustments to its position and velocity
     XFault=0
     YFault=0
     Win=0
@@ -339,7 +336,7 @@ def collision(Xc, Yc, VelX, VelY):
             YFault+=(Dist[0]+1)             #push sprite down according to distance, plus one to prevent faulty rounding
             VelY=0                          #set Y velocity to 0 as a horizontal wall has been hit
             VelX=VelX/2                     #halves X velocity as a penalty to hitting a wall
-        elif Dist[1] == DistCopy[0]:
+        elif Dist[1] == DistCopy[0]:        #if right is the shortest distance
             if BoxList[Xg+1][Yg] == 1:        
                 if Dist[0] < Dist[2]:
                     YFault+=Dist[0]
@@ -349,7 +346,7 @@ def collision(Xc, Yc, VelX, VelY):
             XFault+=(Dist[1]+1)
             VelX=0
             VelY=VelY/2
-        elif Dist[2] == DistCopy[0]:
+        elif Dist[2] == DistCopy[0]:        #if up is the shortest distance
             if BoxList[Xg][Yg-1] == 1:        
                 if Dist[1] < Dist[3]:
                     XFault+=Dist[1]
@@ -359,7 +356,7 @@ def collision(Xc, Yc, VelX, VelY):
             YFault-=(Dist[2]+1)
             VelY=0
             VelX=VelX/2
-        elif Dist[3] == DistCopy[0]:
+        elif Dist[3] == DistCopy[0]:        #if left is the shortest distance
             if BoxList[Xg-1][Yg] == 1:
                 if Dist[2] < Dist[0]:
                     XFault-=Dist[2]
@@ -373,7 +370,7 @@ def collision(Xc, Yc, VelX, VelY):
         Win=1
     return [XFault, YFault, VelX, VelY, Win] #returns how far the sprite has been pushed X and Y as well as updated velocities
 
-def gametimer(Timer):
+def gametimer(Timer):                               #updates the timer each second
     #every second it increments seconds and if 60 seconds has passed, a minute, and if 60 minutes has passed, an hour
     global Sec
     global Min
@@ -396,12 +393,13 @@ def gametimer(Timer):
     Timer.config(text=T) #changes the timer's text to the updated text
     if RunTimer==True: #makes sure that the timer isn't run several times at once if you return to menu screen
         Timer.after(1000, lambda : gametimer(Timer)) #runs the function after 1s
-def gamewin(GameCanvas):
+        
+def gamewin(GameCanvas):                            #displays a game won popup with time taken included
     global Sec
     global Min
     global Hour
     global GameWon
-    # returns if GameWon is true so that the rest of the function is only run once
+    # returns if GameWon is true so that the rest of the function is only run once per playthrough
     if GameWon == True:
         return
     GameWon=True
